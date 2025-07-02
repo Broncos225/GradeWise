@@ -2,6 +2,10 @@
   "name": "GradeWise",
   "short_name": "GradeWise",
   "description": "Calculadora de notas y planificador de éxito académico.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#89d5f2",
   "icons": [
     {
       "src": "https://placehold.co/192x192.png",
@@ -12,12 +16,8 @@
     {
       "src": "https://placehold.co/512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ],
-  "start_url": "/",
-  "display": "standalone",
-  "scope": "/",
-  "theme_color": "#89d5f2",
-  "background_color": "#e0ffff"
+  ]
 }

@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description: 'Calculadora de notas y planificador de éxito académico.',
   manifest: '/manifest.json',
   icons: {
+    icon: 'https://placehold.co/192x192.png',
     apple: 'https://placehold.co/192x192.png',
   },
 };

@@ -1,0 +1,23 @@
+{
+  "name": "GradeWise",
+  "short_name": "GradeWise",
+  "description": "Calculadora de notas y planificador de éxito académico.",
+  "icons": [
+    {
+      "src": "https://placehold.co/192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://placehold.co/512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#89d5f2",
+  "background_color": "#e0ffff"
+}

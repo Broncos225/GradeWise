@@ -7,10 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { PlusCircle, MinusCircle, RefreshCw, BookOpen } from "lucide-react";
+import { PlusCircle, MinusCircle, RefreshCw, BookOpen, ClipboardPaste } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Grade {
   id: number;
@@ -22,6 +25,9 @@ export function GradeCalculator() {
   const nextId = useRef(1);
   const [grades, setGrades] = useState<Grade[]>([{ id: 0, score: '', weight: '' }]);
   const [targetGrade, setTargetGrade] = useState<string>('3.0');
+  const [pasteText, setPasteText] = useState('');
+  const [isPasteDialogOpen, setIsPasteDialogOpen] = useState(false);
+
 
   useEffect(() => {
     try {
@@ -72,6 +78,42 @@ export function GradeCalculator() {
     setTargetGrade('3.0');
     nextId.current = 1;
   };
+  
+  const handlePasteProcess = () => {
+    const regex = /(\d+)%\s*(\d{4}-\d{2}-\d{2})\s*([0-9,.-]+)\s*Matriculada/g;
+    let match;
+    const extractedGrades: Omit<Grade, 'id'>[] = [];
+
+    while ((match = regex.exec(pasteText)) !== null) {
+      const weight = match[1];
+      const score = match[3].replace(',', '.'); // Replace comma with dot for consistency
+      
+      if (score !== '-') {
+        extractedGrades.push({ score, weight });
+      }
+    }
+    
+    if (extractedGrades.length > 0) {
+      const newGrades = extractedGrades.map(g => ({ ...g, id: nextId.current++ }));
+      
+      // If the first grade is empty, replace it. Otherwise, append.
+      if (grades.length === 1 && grades[0].score === '' && grades[0].weight === '') {
+        setGrades(newGrades);
+      } else {
+        setGrades(prevGrades => [...prevGrades, ...newGrades]);
+      }
+    }
+    
+    setPasteText('');
+    setIsPasteDialogOpen(false);
+  };
+  
+  const handleNumberInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+    }
+  };
+
 
   const results = useMemo(() => {
     let totalWeight = 0;
@@ -153,10 +195,15 @@ export function GradeCalculator() {
   return (
     <Card className="w-full max-w-2xl shadow-2xl animate-fade-in">
       <CardHeader>
-        <CardTitle className="text-3xl font-bold text-center font-headline tracking-tight">GradeWise</CardTitle>
-        <CardDescription className="text-center">
-          Calcule sus notas y planifique su éxito académico.
-        </CardDescription>
+        <div className="flex justify-between items-start">
+            <div className="flex-1">
+                <CardTitle className="text-3xl font-bold text-center font-headline tracking-tight">GradeWise</CardTitle>
+                <CardDescription className="text-center">
+                Calcule sus notas y planifique su éxito académico.
+                </CardDescription>
+            </div>
+            <ThemeToggle />
+        </div>
       </CardHeader>
       <CardContent className="space-y-8">
         <div>
@@ -167,6 +214,7 @@ export function GradeCalculator() {
                 placeholder="Ej: 3.0"
                 value={targetGrade}
                 onChange={(e) => setTargetGrade(e.target.value)}
+                onKeyDown={handleNumberInputKeyDown}
                 min="0"
                 max="5"
                 step="0.1"
@@ -177,12 +225,39 @@ export function GradeCalculator() {
         <Separator />
 
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center flex-wrap gap-2">
              <h3 className="text-xl font-semibold">Notas y Porcentajes</h3>
-             <Button variant="outline" size="sm" onClick={handleAddGrade}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Agregar Nota
-            </Button>
+             <div className="flex gap-2">
+                <Dialog open={isPasteDialogOpen} onOpenChange={setIsPasteDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                            <ClipboardPaste className="mr-2 h-4 w-4" />
+                            Pegar Notas
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Pegar texto para extraer notas</DialogTitle>
+                            <DialogDescription>
+                                Pegue el texto de su plataforma académica. La aplicación extraerá automáticamente las notas y los porcentajes que sigan el patrón "porcentaje% fecha nota Matriculada".
+                            </DialogDescription>
+                        </DialogHeader>
+                        <Textarea 
+                            placeholder="Pegue aquí el texto..."
+                            value={pasteText}
+                            onChange={(e) => setPasteText(e.target.value)}
+                            className="min-h-[200px]"
+                        />
+                        <DialogFooter>
+                            <Button onClick={handlePasteProcess}>Procesar y Agregar</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+                <Button variant="outline" size="sm" onClick={handleAddGrade}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Agregar Nota
+                </Button>
+             </div>
           </div>
           <div id="notas" className="space-y-4 max-h-[24rem] overflow-y-auto p-1 -m-1">
             {grades.map((grade, index) => (
@@ -195,6 +270,7 @@ export function GradeCalculator() {
                             placeholder="4.5"
                             value={grade.score}
                             onChange={(e) => handleGradeChange(grade.id, 'score', e.target.value)}
+                            onKeyDown={handleNumberInputKeyDown}
                             min="0"
                             max="5"
                             step="0.1"
@@ -209,6 +285,7 @@ export function GradeCalculator() {
                                 placeholder="25"
                                 value={grade.weight}
                                 onChange={(e) => handleGradeChange(grade.id, 'weight', e.target.value)}
+                                onKeyDown={handleNumberInputKeyDown}
                                 min="0"
                                 max="100"
                                 className="pr-6"
@@ -292,5 +369,7 @@ export function GradeCalculator() {
 }
 
 export default GradeCalculator;
+
+    
 
     
